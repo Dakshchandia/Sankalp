@@ -20,6 +20,15 @@ import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/context/LanguageContext";
 import { format, startOfMonth, eachDayOfInterval, endOfMonth, isSameDay, isToday } from "date-fns";
 
+interface AttendanceRecord {
+  id?: string;
+  _id?: string;
+  workerId: string;
+  workerName: string;
+  status: string;
+  time?: string;
+  [key: string]: any;
+}
 /* ── KPI Card — matches reference with colored left border ── */
 function KpiCard({ title, value, sub, color, borderColor, icon: Icon }: {
   title: string; value: string | number; sub?: string;

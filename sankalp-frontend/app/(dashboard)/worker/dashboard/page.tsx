@@ -113,9 +113,9 @@ export default function WorkerDashboard() {
   const insights = (() => {
     let currentStreak = 0;
     let maxStreak = 0;
-    let currentStart = null;
-    let maxStart = null;
-    let maxEnd = null;
+    let currentStart: Date | string | null = null;
+    let maxStart: Date | string | null = null;
+    let maxEnd: Date | string | null = null;
 
     chartData.forEach(d => {
       if (d.status === "present" || d.status === "late") {
