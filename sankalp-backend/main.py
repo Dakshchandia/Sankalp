@@ -91,60 +91,72 @@ async def seed_demo_worker():
         logger.info(f"✅ Demo worker account created: {email2}")
 
 async def seed_demo_leaves():
-    """Seed some mock leave requests for the demo worker so the UI isn't empty."""
+    """Seed mock leave requests for all workers who have none."""
     from database.connection import get_database
     from datetime import datetime, timedelta
 
     db = get_database()
-    worker_id = "DEMO-WORKER-2"
-    worker_name = "Raj Divyanshu 19"
     
-    # Check if we already seeded leaves for this worker
-    existing_leaves = await db.leaves.count_documents({"workerId": worker_id})
-    if existing_leaves == 0:
-        now = datetime.utcnow()
-        mock_leaves = [
-            {
-                "workerId": worker_id,
-                "workerName": worker_name,
-                "leaveType": "Sick Leave",
-                "startDate": (now - timedelta(days=10)).isoformat(),
-                "endDate": (now - timedelta(days=8)).isoformat(),
-                "reason": "Severe fever and body ache. Need rest.",
-                "status": "approved",
-                "decidedBy": "Admin",
-                "decidedAt": now - timedelta(days=9),
-                "createdAt": now - timedelta(days=11),
-                "updatedAt": now - timedelta(days=9),
-            },
-            {
-                "workerId": worker_id,
-                "workerName": worker_name,
-                "leaveType": "Personal Leave",
-                "startDate": (now - timedelta(days=3)).isoformat(),
-                "endDate": (now - timedelta(days=3)).isoformat(),
-                "reason": "Need to attend a family wedding in my hometown.",
-                "status": "rejected",
-                "decidedBy": "Admin",
-                "decidedAt": now - timedelta(days=2),
-                "rejectReason": "Not enough notice given. Please apply 7 days in advance.",
-                "createdAt": now - timedelta(days=4),
-                "updatedAt": now - timedelta(days=2),
-            },
-            {
-                "workerId": worker_id,
-                "workerName": worker_name,
-                "leaveType": "Emergency Leave",
-                "startDate": (now + timedelta(days=2)).isoformat(),
-                "endDate": (now + timedelta(days=4)).isoformat(),
-                "reason": "Urgent house repairs required due to monsoon damage.",
-                "status": "pending",
-                "createdAt": now - timedelta(hours=5),
-                "updatedAt": now - timedelta(hours=5),
-            }
-        ]
-        await db.leaves.insert_many(mock_leaves)
-        logger.info(f"✅ Seeded 3 mock leave requests for {worker_name}")
+    # Get all workers
+    workers = await db.workers.find({}).to_list(1000)
+    now = datetime.utcnow()
+    
+    new_leaves = []
+    
+    for w in workers:
+        worker_id = w.get("workerId")
+        worker_name = w.get("fullName") or w.get("name") or "Worker"
+        if not worker_id:
+            continue
+            
+        # Check if we already seeded leaves for this worker
+        existing_leaves = await db.leaves.count_documents({"workerId": worker_id})
+        if existing_leaves == 0:
+            mock_leaves = [
+                {
+                    "workerId": worker_id,
+                    "workerName": worker_name,
+                    "leaveType": "Sick Leave",
+                    "startDate": (now - timedelta(days=10)).isoformat(),
+                    "endDate": (now - timedelta(days=8)).isoformat(),
+                    "reason": "Severe fever and body ache. Need rest.",
+                    "status": "approved",
+                    "decidedBy": "Admin",
+                    "decidedAt": now - timedelta(days=9),
+                    "createdAt": now - timedelta(days=11),
+                    "updatedAt": now - timedelta(days=9),
+                },
+                {
+                    "workerId": worker_id,
+                    "workerName": worker_name,
+                    "leaveType": "Personal Leave",
+                    "startDate": (now - timedelta(days=3)).isoformat(),
+                    "endDate": (now - timedelta(days=3)).isoformat(),
+                    "reason": "Need to attend a family wedding in my hometown.",
+                    "status": "rejected",
+                    "decidedBy": "Admin",
+                    "decidedAt": now - timedelta(days=2),
+                    "rejectReason": "Not enough notice given. Please apply 7 days in advance.",
+                    "createdAt": now - timedelta(days=4),
+                    "updatedAt": now - timedelta(days=2),
+                },
+                {
+                    "workerId": worker_id,
+                    "workerName": worker_name,
+                    "leaveType": "Emergency Leave",
+                    "startDate": (now + timedelta(days=2)).isoformat(),
+                    "endDate": (now + timedelta(days=4)).isoformat(),
+                    "reason": "Urgent house repairs required due to monsoon damage.",
+                    "status": "pending",
+                    "createdAt": now - timedelta(hours=5),
+                    "updatedAt": now - timedelta(hours=5),
+                }
+            ]
+            new_leaves.extend(mock_leaves)
+            
+    if new_leaves:
+        await db.leaves.insert_many(new_leaves)
+        logger.info(f"✅ Seeded mock leaves for {len(new_leaves) // 3} workers")
 
 # Initialize FastAPI application
 app = FastAPI(

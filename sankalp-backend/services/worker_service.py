@@ -134,6 +134,49 @@ class WorkerService:
         if mock_attendance:
             await db.attendance.insert_many(mock_attendance)
 
+        # Generate 3 mock past leave requests for the new worker
+        mock_leaves = [
+            {
+                "workerId": data.workerId.upper(),
+                "workerName": data.fullName,
+                "leaveType": "Sick Leave",
+                "startDate": (now_ist - timedelta(days=10)).isoformat(),
+                "endDate": (now_ist - timedelta(days=8)).isoformat(),
+                "reason": "Severe fever and body ache. Need rest.",
+                "status": "approved",
+                "decidedBy": "Admin",
+                "decidedAt": (now_ist - timedelta(days=9)).isoformat(),
+                "createdAt": (now_ist - timedelta(days=11)).isoformat(),
+                "updatedAt": (now_ist - timedelta(days=9)).isoformat(),
+            },
+            {
+                "workerId": data.workerId.upper(),
+                "workerName": data.fullName,
+                "leaveType": "Personal Leave",
+                "startDate": (now_ist - timedelta(days=3)).isoformat(),
+                "endDate": (now_ist - timedelta(days=3)).isoformat(),
+                "reason": "Need to attend a family wedding in my hometown.",
+                "status": "rejected",
+                "decidedBy": "Admin",
+                "decidedAt": (now_ist - timedelta(days=2)).isoformat(),
+                "rejectReason": "Not enough notice given. Please apply 7 days in advance.",
+                "createdAt": (now_ist - timedelta(days=4)).isoformat(),
+                "updatedAt": (now_ist - timedelta(days=2)).isoformat(),
+            },
+            {
+                "workerId": data.workerId.upper(),
+                "workerName": data.fullName,
+                "leaveType": "Emergency Leave",
+                "startDate": (now_ist + timedelta(days=2)).isoformat(),
+                "endDate": (now_ist + timedelta(days=4)).isoformat(),
+                "reason": "Urgent house repairs required due to monsoon damage.",
+                "status": "pending",
+                "createdAt": (now_ist - timedelta(hours=5)).isoformat(),
+                "updatedAt": (now_ist - timedelta(hours=5)).isoformat(),
+            }
+        ]
+        await db.leaves.insert_many(mock_leaves)
+
         # Create audit log
         await audit_service.log(
             action="Worker Created",
