@@ -221,6 +221,9 @@ export default function LoginPage() {
             <p className="text-xs mt-0.5" style={{ color: "#6B7280" }}>
               rajdivyanshu@gmail.com · Divyanshu
             </p>
+            <p className="text-xs mt-0.5" style={{ color: "#6B7280" }}>
+              rajdivyanshu19@gmail.com · Divyanshu
+            </p>
           </div>
         </div>
       </div>

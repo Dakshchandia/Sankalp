@@ -75,18 +75,31 @@ async def seed_demo_worker():
     from datetime import datetime
 
     db = get_database()
-    email = "rajdivyanshu@gmail.com"
-    existing = await db.users.find_one({"email": email})
-    if not existing:
+    email1 = "rajdivyanshu@gmail.com"
+    existing1 = await db.users.find_one({"email": email1})
+    if not existing1:
         await db.users.insert_one({
             "name": "Raj Divyanshu",
-            "email": email,
+            "email": email1,
             "password": hash_password("Divyanshu"),
             "role": "worker",
             "workerId": "DEMO-WORKER",
             "createdAt": datetime.utcnow(),
         })
-        logger.info(f"✅ Demo worker account created: {email}")
+        logger.info(f"✅ Demo worker account created: {email1}")
+
+    email2 = "rajdivyanshu19@gmail.com"
+    existing2 = await db.users.find_one({"email": email2})
+    if not existing2:
+        await db.users.insert_one({
+            "name": "Raj Divyanshu 19",
+            "email": email2,
+            "password": hash_password("Divyanshu"),
+            "role": "worker",
+            "workerId": "DEMO-WORKER-2",
+            "createdAt": datetime.utcnow(),
+        })
+        logger.info(f"✅ Demo worker account created: {email2}")
 
 # Initialize FastAPI application
 app = FastAPI(
