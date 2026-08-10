@@ -61,7 +61,7 @@ async def save_profile_image(file: UploadFile, subfolder: str = "profiles") -> s
     if settings.CLOUDINARY_URL:
         # Upload to Cloudinary
         response = cloudinary.uploader.upload(
-            img_byte_arr,
+            img_byte_arr.getvalue(),
             folder=f"sankalp/{subfolder}",
             format="jpg"
         )
@@ -89,7 +89,7 @@ async def save_attendance_snapshot(image_bytes: bytes, subfolder: str = "attenda
     
     if settings.CLOUDINARY_URL:
         response = cloudinary.uploader.upload(
-            img_byte_arr,
+            img_byte_arr.getvalue(),
             folder=f"sankalp/{subfolder}",
             format="jpg"
         )
