@@ -1,0 +1,13 @@
+node_modules/
+.next/
+venv/
+venv2/
+new_env/
+new_env_313/
+__pycache__/
+*.pyc
+.env
+.env.local
+sankalp-backend/uploads/
+.DS_Store
+*.tsbuildinfo
