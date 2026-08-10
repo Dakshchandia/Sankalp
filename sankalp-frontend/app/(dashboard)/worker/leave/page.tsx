@@ -4,18 +4,19 @@ import { useEffect, useState, useRef } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ClipboardCheck, CheckCircle2, XCircle, Clock, Plus, Upload, Calendar } from "lucide-react";
+import { ClipboardCheck, CheckCircle2, XCircle, Clock, Plus, Upload, Calendar, CalendarDays, Activity } from "lucide-react";
 import { leaveService, type LeaveRequest } from "@/services/leave.service";
 import api from "@/services/api";
 import { toast } from "sonner";
 import { format, differenceInCalendarDays, parseISO } from "date-fns";
 import { useLang } from "@/context/LanguageContext";
+import { motion, AnimatePresence } from "framer-motion";
 
 const schema = z.object({
   leaveType: z.string().min(1, "Select leave type"),
   startDate: z.string().min(1, "Select start date"),
   endDate:   z.string().min(1, "Select end date"),
-  reason:    z.string().min(10, "Minimum 10 characters"),
+  reason:    z.string().min(10, "Minimum 10 characters required"),
 }).refine(d => !d.endDate || !d.startDate || d.endDate >= d.startDate, {
   message: "End date cannot be before start date", path: ["endDate"],
 });
@@ -23,9 +24,28 @@ type FormData = z.infer<typeof schema>;
 const LEAVE_TYPES = ["Sick Leave", "Personal Leave", "Emergency Leave", "Family Event", "Other"];
 
 function StatusChip({ status }: { status: string }) {
-  if (status === "approved") return <span className="badge badge-green">✓ Approved</span>;
-  if (status === "rejected") return <span className="badge badge-red">✕ Rejected</span>;
-  return <span className="badge badge-yellow">⏳ Pending</span>;
+  if (status === "approved") {
+    return (
+      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider" 
+           style={{ background: "rgba(34,197,94,0.1)", color: "#16A34A", border: "1px solid rgba(34,197,94,0.2)" }}>
+        <CheckCircle2 className="w-3.5 h-3.5" /> Approved
+      </div>
+    );
+  }
+  if (status === "rejected") {
+    return (
+      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider" 
+           style={{ background: "rgba(239,68,68,0.1)", color: "#DC2626", border: "1px solid rgba(239,68,68,0.2)" }}>
+        <XCircle className="w-3.5 h-3.5" /> Rejected
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider" 
+         style={{ background: "rgba(245,158,11,0.1)", color: "#D97706", border: "1px solid rgba(245,158,11,0.2)" }}>
+      <Clock className="w-3.5 h-3.5" /> Pending
+    </div>
+  );
 }
 
 export default function WorkerLeavePage() {
@@ -69,136 +89,186 @@ export default function WorkerLeavePage() {
     finally { setSubmitting(false); }
   };
 
+  const totalLeavesAllowed = 21;
+  const leavesTaken = leaves.filter(l => l.status === "approved").reduce((acc, l) => {
+    const days = l.startDate && l.endDate ? differenceInCalendarDays(parseISO(l.endDate), parseISO(l.startDate)) + 1 : 0;
+    return acc + days;
+  }, 0);
+  const pendingLeavesCount = leaves.filter(l => l.status === "pending").length;
+
   return (
-    <div className="space-y-5 animate-fade-in max-w-2xl">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 max-w-4xl mx-auto pb-10">
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="page-title">{t("apply_leave")}</h1>
-          <p className="page-subtitle">Submit and track your leave requests</p>
+          <h1 className="text-3xl font-black tracking-tight" style={{ color: "#111827" }}>Leave Management</h1>
+          <p className="text-sm font-medium mt-1" style={{ color: "#6B7280" }}>Manage your time off, track requests, and check balances.</p>
         </div>
-        <button onClick={() => setShowForm(v => !v)} className="btn-primary flex items-center gap-2 text-sm">
-          <Plus className={`w-4 h-4 transition-transform ${showForm ? "rotate-45" : ""}`} />
-          {showForm ? "Cancel" : "Apply Leave"}
-        </button>
-      </div>
+        <motion.button 
+          whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+          onClick={() => setShowForm(v => !v)} 
+          className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-bold text-sm shadow-md transition-all"
+          style={{ background: showForm ? "#F1F5F9" : "linear-gradient(135deg, #10B981 0%, #059669 100%)", color: showForm ? "#475569" : "#FFFFFF" }}
+        >
+          <Plus className={`w-5 h-5 transition-transform duration-300 ${showForm ? "rotate-45" : ""}`} />
+          {showForm ? "Cancel Application" : "Apply for Leave"}
+        </motion.button>
+      </motion.div>
 
-      {/* Form */}
-      {showForm && (
-        <div className="bg-white rounded-xl p-5" style={{ border: "1px solid #E8EAED", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
-          <h2 className="font-semibold text-sm mb-4" style={{ color: "#1A1A2E" }}>New Leave Application</h2>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: "#6B7280" }}>Leave Type</label>
-              <select {...register("leaveType")} className="input-field text-sm">
-                <option value="">Select leave type</option>
-                {LEAVE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-              {errors.leaveType && <p className="text-xs mt-1" style={{ color: "#EF4444" }}>{errors.leaveType.message}</p>}
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: "#6B7280" }}>Start Date</label>
-                <input {...register("startDate")} type="date" className="input-field text-sm" style={{ colorScheme: "light" }} />
-                {errors.startDate && <p className="text-xs mt-1" style={{ color: "#EF4444" }}>{errors.startDate.message}</p>}
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: "#6B7280" }}>End Date</label>
-                <input {...register("endDate")} type="date" className="input-field text-sm" style={{ colorScheme: "light" }} />
-                {errors.endDate && <p className="text-xs mt-1" style={{ color: "#EF4444" }}>{errors.endDate.message}</p>}
-              </div>
-            </div>
-
-            {numDays > 0 && (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg"
-                   style={{ background: "#F0FDF4", border: "1px solid #BBF7D0" }}>
-                <Calendar className="w-4 h-4" style={{ color: "#16A34A" }} />
-                <p className="text-sm font-semibold" style={{ color: "#16A34A" }}>
-                  {numDays} day{numDays !== 1 ? "s" : ""} of leave
-                </p>
-              </div>
-            )}
-
-            <div>
-              <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: "#6B7280" }}>Reason</label>
-              <textarea {...register("reason")} rows={3} placeholder="Describe reason for leave…"
-                        className="input-field text-sm" style={{ resize: "none" }} />
-              {errors.reason && <p className="text-xs mt-1" style={{ color: "#EF4444" }}>{errors.reason.message}</p>}
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: "#6B7280" }}>
-                Supporting Document <span style={{ color: "#9CA3AF", textTransform: "none" }}>(Optional)</span>
-              </label>
-              <div className="flex items-center gap-3">
-                <button type="button" onClick={() => fileRef.current?.click()}
-                        className="btn-secondary flex items-center gap-2 text-xs px-3 py-2">
-                  <Upload className="w-3.5 h-3.5" /> Choose File
-                </button>
-                <span className="text-xs" style={{ color: docFile ? "#16A34A" : "#9CA3AF" }}>
-                  {docFile ? docFile.name : "PDF, JPG, PNG accepted"}
-                </span>
-                <input ref={fileRef} type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden"
-                       onChange={e => setDocFile(e.target.files?.[0] ?? null)} />
-              </div>
-            </div>
-
-            <button type="submit" disabled={submitting}
-                    className="btn-primary w-full flex items-center justify-center gap-2 py-2.5 disabled:opacity-50">
-              {submitting ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Submitting…</> : "Submit Leave Application"}
-            </button>
-          </form>
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="rounded-2xl p-5 relative overflow-hidden" style={{ background: "linear-gradient(135deg, #0F172A 0%, #1E293B 100%)", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 10px 25px rgba(0,0,0,0.1)" }}>
+          <div className="absolute top-0 right-0 p-4 opacity-10"><Activity className="w-16 h-16 text-white" /></div>
+          <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-1">Available Balance</p>
+          <p className="text-4xl font-black text-white">{totalLeavesAllowed - leavesTaken} <span className="text-base font-medium text-slate-400">days</span></p>
         </div>
-      )}
+        <div className="rounded-2xl p-5 bg-white" style={{ border: "1px solid #E2E8F0", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05)" }}>
+          <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">Leaves Taken</p>
+          <p className="text-4xl font-black text-slate-800">{leavesTaken} <span className="text-base font-medium text-slate-400">days</span></p>
+        </div>
+        <div className="rounded-2xl p-5 bg-white" style={{ border: "1px solid #E2E8F0", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05)" }}>
+          <p className="text-sm font-semibold text-amber-500 uppercase tracking-wider mb-1">Pending Approval</p>
+          <p className="text-4xl font-black text-amber-600">{pendingLeavesCount} <span className="text-base font-medium text-amber-400/80">requests</span></p>
+        </div>
+      </motion.div>
 
-      {/* History */}
-      <div className="bg-white rounded-xl overflow-hidden"
-           style={{ border: "1px solid #E8EAED", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
-        <div className="flex items-center justify-between px-5 py-3.5"
-             style={{ borderBottom: "1px solid #F3F4F6" }}>
-          <h2 className="font-semibold text-sm" style={{ color: "#1A1A2E" }}>My Leave Requests</h2>
-          <span className="badge badge-gray">{leaves.length} total</span>
+      <AnimatePresence>
+        {showForm && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="bg-white rounded-2xl p-6 mt-2" style={{ border: "1px solid #E2E8F0", boxShadow: "0 10px 25px -5px rgba(0,0,0,0.05)" }}>
+              <div className="flex items-center gap-3 mb-6 pb-4" style={{ borderBottom: "1px solid #F1F5F9" }}>
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center"><CalendarDays className="w-5 h-5 text-emerald-600" /></div>
+                <div>
+                  <h2 className="font-bold text-lg text-slate-800">New Leave Application</h2>
+                  <p className="text-xs font-medium text-slate-500">Fill out the details below to submit your request.</p>
+                </div>
+              </div>
+
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+                <div>
+                  <label className="block text-xs font-bold mb-2 uppercase tracking-wide text-slate-600">Leave Type</label>
+                  <select {...register("leaveType")} className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all">
+                    <option value="">Select a reason category</option>
+                    {LEAVE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                  {errors.leaveType && <p className="text-xs font-semibold mt-1.5 text-red-500">{errors.leaveType.message}</p>}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-xs font-bold mb-2 uppercase tracking-wide text-slate-600">Start Date</label>
+                    <input {...register("startDate")} type="date" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm font-medium focus:ring-2 focus:ring-emerald-500 outline-none transition-all" />
+                    {errors.startDate && <p className="text-xs font-semibold mt-1.5 text-red-500">{errors.startDate.message}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold mb-2 uppercase tracking-wide text-slate-600">End Date</label>
+                    <input {...register("endDate")} type="date" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm font-medium focus:ring-2 focus:ring-emerald-500 outline-none transition-all" />
+                    {errors.endDate && <p className="text-xs font-semibold mt-1.5 text-red-500">{errors.endDate.message}</p>}
+                  </div>
+                </div>
+
+                <AnimatePresence>
+                  {numDays > 0 && (
+                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+                         className="flex items-center gap-3 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-100">
+                      <Calendar className="w-5 h-5 text-emerald-600" />
+                      <p className="text-sm font-bold text-emerald-700">
+                        Applying for {numDays} day{numDays !== 1 ? "s" : ""} of leave
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <div>
+                  <label className="block text-xs font-bold mb-2 uppercase tracking-wide text-slate-600">Detailed Reason</label>
+                  <textarea {...register("reason")} rows={4} placeholder="Please provide specific details for your request..."
+                            className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm font-medium focus:ring-2 focus:ring-emerald-500 outline-none transition-all resize-none" />
+                  {errors.reason && <p className="text-xs font-semibold mt-1.5 text-red-500">{errors.reason.message}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold mb-2 uppercase tracking-wide text-slate-600">
+                    Supporting Document <span className="text-slate-400 font-medium normal-case">(Optional, e.g. medical certificate)</span>
+                  </label>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                    <button type="button" onClick={() => fileRef.current?.click()}
+                            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-white border-2 border-slate-200 hover:border-emerald-500 hover:text-emerald-600 transition-colors">
+                      <Upload className="w-4 h-4" /> {docFile ? "Change File" : "Upload File"}
+                    </button>
+                    <span className="text-sm font-medium" style={{ color: docFile ? "#059669" : "#94A3B8" }}>
+                      {docFile ? docFile.name : "No file selected"}
+                    </span>
+                    <input ref={fileRef} type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden"
+                           onChange={e => setDocFile(e.target.files?.[0] ?? null)} />
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-slate-100">
+                  <button type="submit" disabled={submitting}
+                          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm shadow-md transition-all disabled:opacity-50 hover:opacity-90"
+                          style={{ background: "linear-gradient(135deg, #10B981 0%, #059669 100%)", color: "#FFFFFF" }}>
+                    {submitting ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Processing Request…</> : "Submit Application"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-white rounded-2xl overflow-hidden shadow-sm" style={{ border: "1px solid #E2E8F0" }}>
+        <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-b border-slate-100">
+          <h2 className="font-bold text-slate-800">Recent Applications</h2>
+          <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-200 text-slate-600">{leaves.length} Total</span>
         </div>
 
         {loading ? (
-          <div className="p-5 space-y-3">{[0,1,2].map(i => <div key={i} className="h-14 skeleton rounded-lg" />)}</div>
+          <div className="p-6 space-y-4">{[0,1,2].map(i => <div key={i} className="h-20 bg-slate-100 animate-pulse rounded-xl" />)}</div>
         ) : leaves.length === 0 ? (
-          <div className="py-14 text-center">
-            <ClipboardCheck className="w-8 h-8 mx-auto mb-2" style={{ color: "#E5E7EB" }} />
-            <p className="text-sm" style={{ color: "#9CA3AF" }}>No leave requests yet</p>
+          <div className="py-20 text-center flex flex-col items-center">
+            <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-4"><ClipboardCheck className="w-8 h-8 text-slate-300" /></div>
+            <p className="font-bold text-slate-500">No leave history found</p>
+            <p className="text-sm font-medium text-slate-400 mt-1">Your past leave requests will appear here.</p>
           </div>
         ) : (
-          <div>
-            {leaves.map((l, i) => {
-              const days = l.startDate && l.endDate
-                ? differenceInCalendarDays(parseISO(l.endDate), parseISO(l.startDate)) + 1 : 0;
+          <div className="divide-y divide-slate-100">
+            {leaves.map((l) => {
+              const days = l.startDate && l.endDate ? differenceInCalendarDays(parseISO(l.endDate), parseISO(l.startDate)) + 1 : 0;
               return (
-                <div key={l.id} className="px-5 py-4 flex flex-col sm:flex-row sm:items-start gap-3"
-                     style={{ borderBottom: i < leaves.length - 1 ? "1px solid #F3F4F6" : "none" }}>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className="badge badge-purple text-[11px]">{l.leaveType}</span>
+                <div key={l.id} className="p-6 hover:bg-slate-50 transition-colors flex flex-col md:flex-row md:items-center gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-wider bg-slate-800 text-white">{l.leaveType}</span>
                       <StatusChip status={l.status} />
-                      {days > 0 && <span className="text-[11px] font-semibold" style={{ color: "#6B7280" }}>{days}d</span>}
                     </div>
-                    <p className="text-xs" style={{ color: "#6B7280" }}>
-                      {l.startDate && format(new Date(l.startDate), "dd MMM yyyy")} → {l.endDate && format(new Date(l.endDate), "dd MMM yyyy")}
-                    </p>
-                    <p className="text-xs mt-0.5 truncate" style={{ color: "#9CA3AF" }}>{l.reason}</p>
+                    <h3 className="font-bold text-slate-800 text-sm mb-1">
+                      {l.startDate && format(new Date(l.startDate), "MMMM d, yyyy")} — {l.endDate && format(new Date(l.endDate), "MMMM d, yyyy")}
+                      <span className="ml-2 text-xs font-semibold text-slate-500">({days} day{days !== 1 ? "s" : ""})</span>
+                    </h3>
+                    <p className="text-sm font-medium text-slate-500 mb-2 leading-relaxed">{l.reason}</p>
                     {l.status === "rejected" && l.rejectReason && (
-                      <p className="text-xs mt-1 font-medium" style={{ color: "#DC2626" }}>Rejected: {l.rejectReason}</p>
+                      <div className="px-3 py-2 rounded-lg bg-red-50 border border-red-100 text-xs font-semibold text-red-600 mt-3 inline-block">
+                        Reason: {l.rejectReason}
+                      </div>
                     )}
                   </div>
-                  <p className="text-xs flex-shrink-0" style={{ color: "#9CA3AF" }}>
-                    {l.createdAt && format(new Date(l.createdAt), "dd MMM")}
-                  </p>
+                  <div className="md:text-right flex flex-col gap-1 shrink-0 mt-4 md:mt-0">
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Applied On</p>
+                    <p className="text-sm font-semibold text-slate-700">{l.createdAt ? format(new Date(l.createdAt), "MMM d, yyyy") : "N/A"}</p>
+                    {l.decidedBy && (
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-3">Reviewed By</p>
+                    )}
+                    {l.decidedBy && (
+                      <p className="text-sm font-semibold text-slate-700">{l.decidedBy}</p>
+                    )}
+                  </div>
                 </div>
               );
             })}
           </div>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 }
