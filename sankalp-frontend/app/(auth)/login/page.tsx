@@ -203,14 +203,25 @@ export default function LoginPage() {
       </div>
 
       {/* Demo credentials */}
-      <div className="rounded-xl p-3.5 flex items-start gap-2.5"
+      <div className="rounded-xl p-3.5 flex flex-col gap-2"
            style={{ background: "#F0FDF4", border: "1px solid #BBF7D0" }}>
-        <Sparkles className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: "#22C55E" }} />
-        <div>
-          <p className="text-xs font-semibold" style={{ color: "#15803D" }}>Demo Credentials</p>
-          <p className="text-xs mt-0.5" style={{ color: "#6B7280" }}>
-            admin@sankalp.gov.in · Admin@1234
-          </p>
+        <div className="flex items-start gap-2.5">
+          <Sparkles className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: "#22C55E" }} />
+          <div>
+            <p className="text-xs font-semibold" style={{ color: "#15803D" }}>Demo Credentials (Manager)</p>
+            <p className="text-xs mt-0.5" style={{ color: "#6B7280" }}>
+              admin@sankalp.gov.in · Admin@1234
+            </p>
+          </div>
+        </div>
+        <div className="flex items-start gap-2.5 mt-1 pt-2" style={{ borderTop: "1px solid #BBF7D0" }}>
+          <Sparkles className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: "#22C55E" }} />
+          <div>
+            <p className="text-xs font-semibold" style={{ color: "#15803D" }}>Demo Credentials (Worker)</p>
+            <p className="text-xs mt-0.5" style={{ color: "#6B7280" }}>
+              rajdivyanshu@gmail.com · Divyanshu
+            </p>
+          </div>
         </div>
       </div>
     </div>

@@ -40,6 +40,7 @@ async def lifespan(app: FastAPI):
 
     # Seed initial admin account if it doesn't exist
     await seed_admin()
+    await seed_demo_worker()
 
     logger.info("✅ SANKALP Backend ready.")
     yield
@@ -67,6 +68,25 @@ async def seed_admin():
         })
         logger.info(f"✅ Admin account created: {settings.ADMIN_EMAIL}")
 
+async def seed_demo_worker():
+    """Create the demo worker account."""
+    from database.connection import get_database
+    from utils.password_handler import hash_password
+    from datetime import datetime
+
+    db = get_database()
+    email = "rajdivyanshu@gmail.com"
+    existing = await db.users.find_one({"email": email})
+    if not existing:
+        await db.users.insert_one({
+            "name": "Raj Divyanshu",
+            "email": email,
+            "password": hash_password("Divyanshu"),
+            "role": "worker",
+            "workerId": "DEMO-WORKER",
+            "createdAt": datetime.utcnow(),
+        })
+        logger.info(f"✅ Demo worker account created: {email}")
 
 # Initialize FastAPI application
 app = FastAPI(
