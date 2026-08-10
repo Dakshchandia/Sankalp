@@ -97,17 +97,28 @@ async def seed_demo_leaves():
 
     db = get_database()
     
-    # Get all workers
+    # Get all physical workers
     workers = await db.workers.find({}).to_list(1000)
-    now = datetime.utcnow()
     
+    # Get all worker user accounts (for demo accounts)
+    worker_users = await db.users.find({"role": "worker"}).to_list(1000)
+    
+    # Combine them into a uniform format
+    all_workers = []
+    for w in workers:
+        if w.get("workerId"):
+            all_workers.append({"workerId": w.get("workerId"), "name": w.get("fullName", "Worker")})
+            
+    for u in worker_users:
+        if u.get("workerId"):
+            all_workers.append({"workerId": u.get("workerId"), "name": u.get("name", "Worker")})
+            
+    now = datetime.utcnow()
     new_leaves = []
     
-    for w in workers:
-        worker_id = w.get("workerId")
-        worker_name = w.get("fullName") or w.get("name") or "Worker"
-        if not worker_id:
-            continue
+    for w in all_workers:
+        worker_id = w["workerId"]
+        worker_name = w["name"]
             
         # Check if we already seeded leaves for this worker
         existing_leaves = await db.leaves.count_documents({"workerId": worker_id})
