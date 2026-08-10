@@ -12,7 +12,7 @@ import { motion } from "framer-motion";
 import { StatusBadge }    from "@/components/shared/StatusBadge";
 import { ProfileSkeleton } from "@/components/shared/LoadingSkeleton";
 import { ErrorState }      from "@/components/shared/ErrorState";
-import { formatCurrency, formatDate, formatPhone, getInitials } from "@/utils/formatters";
+import { formatCurrency, formatDate, formatPhone, getInitials, getImageUrl } from "@/utils/formatters";
 import { ROUTES, API_BASE_URL } from "@/lib/constants";
 
 interface PageProps { params: Promise<{ id: string }> }
@@ -86,8 +86,8 @@ export default function WorkerProfilePage({ params }: PageProps) {
               <div className="w-24 h-24 rounded-2xl overflow-hidden flex items-center justify-center"
                    style={{ background:"rgba(255,255,255,0.06)", border:"2px solid rgba(34,197,94,0.2)" }}>
                 {worker.profileImage
-                  ? <img src={`${API_BASE_URL}/uploads/${worker.profileImage}`} alt={worker.fullName} className="w-full h-full object-cover" />
-                  : <span className="text-3xl font-black text-white">{getInitials(worker.fullName)}</span>}
+                  ? <img src={getImageUrl(worker.profileImage)} alt={worker.fullName} className="w-full h-full object-cover" />
+                  : <div className="w-full h-full bg-slate-800 flex items-center justify-center text-3xl font-bold text-slate-400">{getInitials(worker.fullName)}</div>}
               </div>
               {worker.faceEnrolled && (
                 <div className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-xl flex items-center justify-center"

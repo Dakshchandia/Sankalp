@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     # File uploads
     UPLOAD_DIR: str = "uploads"
     MAX_FILE_SIZE_MB: int = 5
+    CLOUDINARY_URL: Optional[str] = None
+
 
     # Attendance
     CONFIDENCE_THRESHOLD: float = 70.0

@@ -7,6 +7,7 @@ import { workerService } from "@/services/worker.service";
 import { leaveService } from "@/services/leave.service";
 import api from "@/services/api";
 import { formatCurrency, formatDate } from "@/utils/formatters";
+import { getImageUrl } from "@/utils/formatters";
 import type { Worker } from "@/types/worker.types";
 import type { AttendanceRecord } from "@/types/attendance.types";
 import Link from "next/link";
@@ -171,7 +172,7 @@ export default function WorkerDashboard() {
         <div className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center font-bold text-xl text-white"
              style={{ background: "linear-gradient(135deg,#22C55E,#16A34A)" }}>
           {worker?.profileImage
-            ? <img src={`${API_BASE_URL}/uploads/${worker.profileImage}`} alt="" className="w-full h-full object-cover" />
+            ? <img src={getImageUrl(worker.profileImage)} alt="" className="w-full h-full object-cover" />
             : (worker?.fullName ?? user?.name ?? "W")?.charAt(0).toUpperCase()}
         </div>
 

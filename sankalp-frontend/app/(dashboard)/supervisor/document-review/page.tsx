@@ -121,7 +121,7 @@ export default function DocumentReviewPage() {
                     <td>
                       <div className="flex items-center gap-2 flex-wrap">
                         {/* View */}
-                        <a href={`${API_BASE_URL}/uploads/documents/${d.fileName}`}
+                        <a href={d.fileName.startsWith('http') ? d.fileName : `${API_BASE_URL}/uploads/documents/${d.fileName}`}
                            target="_blank" rel="noreferrer"
                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors"
                            style={{ background: "#EFF6FF", color: "#1D4ED8" }}

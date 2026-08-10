@@ -1,4 +1,16 @@
 import { format, formatDistanceToNow, parseISO } from "date-fns";
+import { API_BASE_URL } from "@/lib/constants";
+
+/**
+ * Get the full image URL, handling both Cloudinary URLs and local uploads.
+ */
+export function getImageUrl(src: string): string {
+  if (!src) return "";
+  if (src.startsWith("http://") || src.startsWith("https://")) {
+    return src;
+  }
+  return `${API_BASE_URL}/uploads/${src}`;
+}
 
 /**
  * Format a date string to a readable format.

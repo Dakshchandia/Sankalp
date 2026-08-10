@@ -7,6 +7,7 @@ import { workerService } from "@/services/worker.service";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { formatCurrency, formatDate, formatPhone, getInitials } from "@/utils/formatters";
 import { API_BASE_URL } from "@/lib/constants";
+import { getImageUrl } from "@/utils/formatters";
 import type { Worker } from "@/types/worker.types";
 
 export default function WorkerProfilePage() {
@@ -59,7 +60,7 @@ export default function WorkerProfilePage() {
           <div className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 flex items-center justify-center"
                style={{ background:"rgba(255,255,255,0.04)", border:"2px solid rgba(255,255,255,0.08)" }}>
             {worker.profileImage ? (
-              <img src={`${API_BASE_URL}/uploads/${worker.profileImage}`} alt={worker.fullName}
+              <img src={getImageUrl(worker.profileImage)} alt={worker.fullName}
                    className="w-full h-full object-cover" />
             ) : (
               <span className="text-2xl font-bold" style={{ color:"rgba(255,255,255,0.3)" }}>

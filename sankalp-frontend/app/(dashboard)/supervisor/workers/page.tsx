@@ -14,7 +14,7 @@ import { useWorkers } from "@/hooks/useWorkers";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ErrorState }    from "@/components/shared/ErrorState";
-import { formatCurrency, formatWorkerId } from "@/utils/formatters";
+import { formatCurrency, formatWorkerId, getImageUrl } from "@/utils/formatters";
 import { ROUTES, DEFAULT_DEPARTMENTS, API_BASE_URL } from "@/lib/constants";
 import type { Worker } from "@/types/worker.types";
 
@@ -22,19 +22,19 @@ type ViewMode = "grid" | "table";
 
 /* ── Worker avatar helper ── */
 function WorkerAvatar({ worker, size = 40 }: { worker: Worker; size?: number }) {
-  const s = `${size}px`;
+  const sz = `${size}px`;
   if (worker.profileImage) {
     return (
-      <img src={`${API_BASE_URL}/uploads/${worker.profileImage}`} alt={worker.fullName}
+      <img src={getImageUrl(worker.profileImage)} alt={worker.fullName}
            className="object-cover rounded-full flex-shrink-0"
-           style={{ width: s, height: s, border: "2px solid rgba(255,255,255,0.1)" }} />
+           style={{ width: sz, height: sz, border: "2px solid rgba(255,255,255,0.1)" }} />
     );
   }
   const colors = ["#22C55E,#06B6D4","#3B82F6,#8B5CF6","#F59E0B,#EF4444","#06B6D4,#3B82F6"];
   const gradient = colors[worker.fullName.charCodeAt(0) % colors.length];
   return (
     <div className="rounded-full flex items-center justify-center font-bold text-white flex-shrink-0"
-         style={{ width: s, height: s, background: `linear-gradient(135deg,${gradient})`, fontSize: size * 0.35, border: "2px solid rgba(255,255,255,0.1)" }}>
+         style={{ width: sz, height: sz, background: `linear-gradient(135deg,${gradient})`, fontSize: size * 0.35, border: "2px solid rgba(255,255,255,0.1)" }}>
       {worker.fullName.charAt(0).toUpperCase()}
     </div>
   );

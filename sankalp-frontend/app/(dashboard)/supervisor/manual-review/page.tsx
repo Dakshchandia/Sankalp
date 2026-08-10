@@ -10,7 +10,7 @@ import {
 import { useManualReviews }  from "@/hooks/useAttendance";
 import { StatusBadge }       from "@/components/shared/StatusBadge";
 import { EmptyState }        from "@/components/shared/EmptyState";
-import { formatDateTime }    from "@/utils/formatters";
+import { formatDateTime, getImageUrl }    from "@/utils/formatters";
 import { API_BASE_URL }      from "@/lib/constants";
 import type { ManualReview } from "@/types/attendance.types";
 import { useLang }           from "@/context/LanguageContext";
@@ -49,7 +49,7 @@ function PhotoPanel({ src, label, accent, empty }: {
       </div>
       <div className="flex items-center justify-center p-3" style={{ minHeight:140 }}>
         {src
-          ? <img src={`${API_BASE_URL}/uploads/${src}`} alt={label} className="w-full max-h-36 object-cover rounded-xl" />
+          ? <img src={getImageUrl(src)} alt={label} className="w-full max-h-36 object-cover rounded-xl" />
           : <div className="flex flex-col items-center gap-2 py-6">{empty}</div>}
       </div>
     </div>
@@ -96,7 +96,7 @@ function ReviewCard({ review, remark, onRemarkChange, onApprove, onReject, isApp
           <div className="w-12 h-12 rounded-2xl overflow-hidden flex-shrink-0 flex items-center justify-center"
                style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.1)" }}>
             {worker.profileImage
-              ? <img src={`${API_BASE_URL}/uploads/${worker.profileImage}`} alt="" className="w-full h-full object-cover" />
+              ? <img src={getImageUrl(worker.profileImage)} alt="" className="w-full h-full object-cover" />
               : <User className="w-6 h-6" style={{ color:"rgba(255,255,255,0.3)" }} />}
           </div>
 
