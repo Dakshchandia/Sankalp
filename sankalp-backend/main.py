@@ -75,18 +75,6 @@ async def seed_demo_worker():
     from datetime import datetime
 
     db = get_database()
-    email1 = "rajdivyanshu@gmail.com"
-    existing1 = await db.users.find_one({"email": email1})
-    if not existing1:
-        await db.users.insert_one({
-            "name": "Raj Divyanshu",
-            "email": email1,
-            "password": hash_password("Divyanshu"),
-            "role": "worker",
-            "workerId": "DEMO-WORKER",
-            "createdAt": datetime.utcnow(),
-        })
-        logger.info(f"✅ Demo worker account created: {email1}")
 
     email2 = "rajdivyanshu19@gmail.com"
     existing2 = await db.users.find_one({"email": email2})
